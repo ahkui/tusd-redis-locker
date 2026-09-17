@@ -67,7 +67,7 @@ func (lock *redisLock) Lock(ctx context.Context, requestRelease func()) error {
 
 	// Subscribe to release notifications from the current holder
 	pubsub := lock.client.Subscribe(ctx, lock.releaseChannel())
-	defer pubsub.Close()
+	defer func() { _ = pubsub.Close() }()
 	ch := pubsub.Channel()
 
 	// Use a fallback ticker to periodically retry and re-request
@@ -110,7 +110,7 @@ func (lock *redisLock) startKeepAliveAndListen(requestRelease func()) {
 	// 1. Listen for requests from other instances to release the lock
 	go func() {
 		pubsub := lock.client.Subscribe(lock.ctx, lock.requestChannel())
-		defer pubsub.Close()
+		defer func() { _ = pubsub.Close() }()
 		ch := pubsub.Channel()
 		for {
 			select {
