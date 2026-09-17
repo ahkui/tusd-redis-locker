@@ -1,5 +1,14 @@
 # tusd-redis-locker
 
+[![tag](https://img.shields.io/github/tag/ahkui/tusd-redis-locker.svg)](https://github.com/ahkui/tusd-redis-locker/releases)
+![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.26-%23007d9c)
+[![GoDoc](https://godoc.org/github.com/ahkui/tusd-redis-locker?status.svg)](https://pkg.go.dev/github.com/ahkui/tusd-redis-locker)
+![Build Status](https://github.com/ahkui/tusd-redis-locker/actions/workflows/test.yml/badge.svg)
+[![Go report](https://goreportcard.com/badge/github.com/ahkui/tusd-redis-locker)](https://goreportcard.com/report/github.com/ahkui/tusd-redis-locker)
+[![Coverage](https://img.shields.io/codecov/c/github/ahkui/tusd-redis-locker)](https://codecov.io/gh/ahkui/tusd-redis-locker)
+[![Contributors](https://img.shields.io/github/contributors/ahkui/tusd-redis-locker)](https://github.com/ahkui/tusd-redis-locker/graphs/contributors)
+[![License](https://img.shields.io/github/license/ahkui/tusd-redis-locker)](./LICENSE)
+
 A [tusd](https://github.com/tus/tusd) `handler.Locker` implementation backed
 by Redis, using [redsync](https://github.com/go-redsync/redsync) for the
 distributed mutex algorithm and
