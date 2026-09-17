@@ -1,0 +1,43 @@
+name: Tests
+
+on:
+  push:
+    tags: ["*"]
+    branches: ["*"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go:
+          - "1.26"
+          - "1.27"
+          - "1.x"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+          stable: false
+
+      - name: Build
+        run: make build
+
+      - name: Test
+        run: make test
+
+      - name: Test
+        run: make coverage
+
+      - name: Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./cover.out
+          flags: unittests
+          verbose: true
+        if: matrix.go == '1.22'
