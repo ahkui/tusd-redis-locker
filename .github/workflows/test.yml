@@ -40,4 +40,4 @@ jobs:
           file: ./cover.out
           flags: unittests
           verbose: true
-        if: matrix.go == '1.22'
+        if: matrix.go == '1.26'
