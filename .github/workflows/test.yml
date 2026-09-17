@@ -37,7 +37,7 @@ jobs:
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./cover.out
+          files: ./cover.out
           flags: unittests
           verbose: true
         if: matrix.go == '1.26'
