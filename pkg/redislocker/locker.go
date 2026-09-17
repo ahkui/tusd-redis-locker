@@ -79,7 +79,7 @@ func (locker *Locker) NewLock(id string) (handler.Lock, error) {
 		redsync.WithExpiry(locker.options.TTL()),
 	)
 
-	return newRedisLock(mutex), nil
+	return newRedisLock(id, mutex, locker.client, locker.options.Prefix()), nil
 }
 
 // key builds the namespaced Redis key used for the distributed lock of the

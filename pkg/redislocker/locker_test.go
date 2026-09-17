@@ -3,6 +3,7 @@ package redislocker
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -176,4 +177,72 @@ func TestNew_WithFunctionalOptions(t *testing.T) {
 		t.Fatal("must not be called")
 	}))
 	a.NoError(lock.Unlock())
+}
+
+func TestRedisLocker_KeepAlive(t *testing.T) {
+	a := assert.New(t)
+	// Use a very short TTL to verify keep-alive extends it
+	locker := newTestLocker(t, "test-tusd-keepalive", 2*time.Second)
+
+	lock1, err := locker.NewLock("keepalive-id")
+	a.NoError(err)
+
+	a.NoError(lock1.Lock(context.Background(), func() {}))
+
+	// Wait longer than the original TTL
+	time.Sleep(3 * time.Second)
+
+	// Another locker instance tries to acquire the same lock
+	lock2, err := locker.NewLock("keepalive-id")
+	a.NoError(err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+
+	// Should fail to acquire because lock1's keep-alive extended the TTL
+	err = lock2.Lock(ctx, func() {})
+	a.Equal(handler.ErrLockTimeout, err)
+
+	a.NoError(lock1.Unlock())
+}
+
+func TestRedisLocker_PubSubReleaseRequest(t *testing.T) {
+	a := assert.New(t)
+	locker := newTestLocker(t, "test-tusd-pubsub", 5*time.Second)
+
+	lock1, err := locker.NewLock("pubsub-id")
+	a.NoError(err)
+
+	releaseRequestedChan := make(chan struct{})
+
+	var once sync.Once
+	a.NoError(lock1.Lock(context.Background(), func() {
+		once.Do(func() {
+			close(releaseRequestedChan) // Signal that we received the pub/sub request
+		})
+	}))
+
+	// Wait for background subscription to establish
+	time.Sleep(100 * time.Millisecond)
+
+	lock2, err := locker.NewLock("pubsub-id")
+	a.NoError(err)
+
+	// Locker B tries to acquire the lock in the background. It will fail instantly
+	// and start publishing to the request channel.
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		_ = lock2.Lock(ctx, func() {})
+	}()
+
+	// Wait to see if lock1's callback is triggered by lock2's request via Redis Pub/Sub
+	select {
+	case <-releaseRequestedChan:
+		// Success! The request came through Pub/Sub
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for Pub/Sub release request")
+	}
+
+	a.NoError(lock1.Unlock())
 }
